@@ -3,7 +3,6 @@ Ext.define('CustomApp', {
     scopeType: 'release',
 
     onScopeChange: function(scope) {
-        //this._addLine(this,"scope changed " + scope.getQueryFilter());
         this._summarizeMetrics();
     },
     
@@ -28,7 +27,11 @@ Ext.define('CustomApp', {
         var promises = [];
         var resultArray = [];
 
-        promises.push(me._getCount('PortfolioItem/Feature', 'Defined Features, Business', me._filterByAttribute('State.Name','Defined'), PROJECT_BUSINESS));
+        promises.push(me._getCount('PortfolioItem/Feature', 'Defined Business Features', me._filterByAttribute('State.Name','Defined'), PROJECT_BUSINESS, 40));
+
+        promises.push(me._getCount('TestCase', 'TF196 Failed Test Cases',me._filterVerdictByTestFolder('Fail','TF196'),PROJECT_RADIAN,245));
+        promises.push(me._getCount('TestCase', 'TF196 Passing Test Cases',me._filterVerdictByTestFolder('Pass','TF196'),PROJECT_RADIAN,245));
+        promises.push(me._getCount('TestCase', 'TF196 Other Test Cases',me._filterNoVerdictByTestFolder('TF196'),PROJECT_RADIAN,245));
 
         Deft.Promise.all(promises).then({
             success: function(results) {
@@ -36,14 +39,13 @@ Ext.define('CustomApp', {
                     resultArray.push(result);
                     console.log(result);
                 });
-                // Create grid from summarized results
                 me._makeGrid(resultArray);
             }
         });
 
     },
 
-    _getCount: function(modelType, caption, filter, project) {
+    _getCount: function(modelType, caption, filter, project, baseline) {
         var deferred = Ext.create('Deft.Deferred');
 
         var artifactStore = Ext.create('Rally.data.wsapi.Store', {
@@ -62,9 +64,9 @@ Ext.define('CustomApp', {
                 load: function(store, records) {
                     var manualCount = store.getTotalCount();
                     result = {
-                        "ModelType": modelType,
                         "Caption": caption,
-                        "Count": manualCount
+                        "Count": manualCount,
+                        "Metric": ((manualCount / baseline) * 100).toFixed(1) + "%"
                     };
                     deferred.resolve(result);
                 }
@@ -84,6 +86,39 @@ Ext.define('CustomApp', {
 		if(timeboxScope) {            
 			filters = filters.and(timeboxScope.getQueryFilter());
 		}
+		return filters;		
+	},
+	
+	_filterVerdictByTestFolder: function(attrValue, folder) {
+        var filters = Ext.create('Rally.data.QueryFilter', {
+            property: 'LastVerdict',
+            operator: '=',
+            value: attrValue
+            });
+		filters = filters.and(Ext.create('Rally.data.QueryFilter', {
+            property: 'TestFolder.FormattedID',
+            operator: '=',
+            value: folder
+            }));
+		return filters;		
+	},
+	
+	_filterNoVerdictByTestFolder: function(folder) {
+        var filters = Ext.create('Rally.data.QueryFilter', {
+            property: 'LastVerdict',
+            operator: '!=',
+            value: 'Pass'
+            });
+		filters = filters.and(Ext.create('Rally.data.QueryFilter', {
+            property: 'LastVerdict',
+            operator: '!=',
+            value: 'Fail'
+            }));
+		filters = filters.and(Ext.create('Rally.data.QueryFilter', {
+            property: 'TestFolder.FormattedID',
+            operator: '=',
+            value: folder
+            }));
 		return filters;		
 	},
 	
@@ -118,13 +153,14 @@ Ext.define('CustomApp', {
         me._summaryGrid = Ext.create('Rally.ui.grid.Grid', {
             itemId: 'artifactGrid',
             store: gridStore,
+            columnWidth: 0.3,
 
             columnCfgs: [
                 {
-                    text: 'Artifact', dataIndex: 'ModelType'
+                    text: 'Metric', dataIndex: 'Metric'
                 },
                 {
-                    text: 'Metric', dataIndex: 'Caption'
+                    text: 'Caption', dataIndex: 'Caption'
                 },
                 {
                     text: 'Count', dataIndex: 'Count'
