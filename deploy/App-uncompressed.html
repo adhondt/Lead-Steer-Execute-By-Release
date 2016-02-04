@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lead-Steer-Execute-By-Release</title>
+
+    <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
+
+    <script type="text/javascript">
+        Rally.onReady(function () {
+                Ext.define('Rally.guide.ReleaseFilteredBoard', {
+    extend: 'Rally.app.TimeboxScopedApp',
+    scopeType: 'release',
+
+    onScopeChange: function(scope) {
+        if(!this.board) {
+             this.board = this.add({
+                xtype: 'rallycardboard',
+                storeConfig: {
+                    filters: [scope.getQueryFilter()]
+                }
+            });
+        } else {
+            this.board.refresh({
+                storeConfig: {
+                    filters: [scope.getQueryFilter()]
+                }
+            });
+        }
+    }
+});
+
+            Rally.launchApp('CustomApp', {
+                name:"Lead-Steer-Execute-By-Release",
+	            parentRepos:""
+            });
+
+        });
+    </script>
+
+
+
+    <style type="text/css">
+        .app {
+  /* Add app styles here */
+}
+
+    </style>
+</head>
+<body>
+</body>
+</html>
