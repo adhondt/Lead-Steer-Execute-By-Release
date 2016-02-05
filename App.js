@@ -3,15 +3,6 @@ Ext.define('CustomApp', {
     scopeType: 'release',
 
     onScopeChange: function(scope) {
-        var me = this;
-        me._calcBaselines(me).then(
-                function(testFolderCases){
-                    return me._runMetrics(me, testFolderCases);
-            }
-        );
-    },
-    
-    _runMetrics: function(me, testFolderCases){
         var PROJECT_RADIAN = '37192747640';
         var PROJECT_BUSINESS = '37637012809';
         var PROJECT_SPRINT_TEAMS = '37213611687';
@@ -21,16 +12,26 @@ Ext.define('CustomApp', {
         var PROJECT_ECMLDR_TEAMS = '35625373948';
         var PROJECT_PAS_TEAMS = '34799452294';
         var PROJECT_SFDC_TEAMS = '35625125755';
+        var me = this;
 
-        var promises = [];
+        me._calcBaselines(me).then(
+                function(testFolderCases){
+                    var metrics = [];
+            
+                    metrics.push(me._getCount('PortfolioItem/Feature', 'Defined Business Features', me._filterByAttribute('State.Name','Defined'), PROJECT_BUSINESS, 40));
+                    metrics.push(me._getCount('TestCase', 'TF196 Failed Test Cases',me._filterVerdictByTestFolder('Fail','TF196'),PROJECT_RADIAN,testFolderCases));
+                    metrics.push(me._getCount('TestCase', 'TF196 Passing Test Cases',me._filterVerdictByTestFolder('Pass','TF196'),PROJECT_RADIAN,testFolderCases));
+                    metrics.push(me._getCount('TestCase', 'TF196 Other Test Cases',me._filterNoVerdictByTestFolder('TF196'),PROJECT_RADIAN,testFolderCases));
+                    return me._runMetrics(me, testFolderCases, metrics);
+            }
+        );
+    },
+    
+    _runMetrics: function(me, testFolderCases, metrics){
+
         var resultArray = [];
 
-        promises.push(me._getCount('PortfolioItem/Feature', 'Defined Business Features', me._filterByAttribute('State.Name','Defined'), PROJECT_BUSINESS, 40));
-        promises.push(me._getCount('TestCase', 'TF196 Failed Test Cases',me._filterVerdictByTestFolder('Fail','TF196'),PROJECT_RADIAN,testFolderCases));
-        promises.push(me._getCount('TestCase', 'TF196 Passing Test Cases',me._filterVerdictByTestFolder('Pass','TF196'),PROJECT_RADIAN,testFolderCases));
-        promises.push(me._getCount('TestCase', 'TF196 Other Test Cases',me._filterNoVerdictByTestFolder('TF196'),PROJECT_RADIAN,testFolderCases));
-
-        Deft.Promise.all(promises).then({
+        Deft.Promise.all(metrics).then({
             success: function(results) {
                 Ext.Array.each(results, function(result) {
                     resultArray.push(result);
@@ -50,21 +51,13 @@ Ext.define('CustomApp', {
         var PROJECT_RADIAN = '37192747640';
 
         return me._count('TestCase', 'TestFolder.FormattedID', 'TF196', PROJECT_RADIAN).then({
-            success: function(results) {
-                    return me._pullCount(results);
+            success: function(result) {
+                    return result;
                 }
             }
         );
     },
     
-    _pullCount: function(results){
-        var deferred = Ext.create('Deft.Deferred');
-        Ext.Array.each(results, function(result) {
-            deferred.resolve(result.Count);
-        });
-        return deferred;
-    },
-
     _count: function(modelType, attribute, attrValue, project) {
         var deferred = Ext.create('Deft.Deferred');
 
@@ -88,12 +81,8 @@ Ext.define('CustomApp', {
             ],
             listeners: {
                 load: function(store, records) {
-                    var manualCount = store.getTotalCount();
-                    result = {
-                        "Caption": modelType,
-                        "Count": manualCount
-                    };
-                    deferred.resolve(result);                }
+                    deferred.resolve(store.getTotalCount());
+                }
             }
         });
 
