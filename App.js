@@ -214,8 +214,8 @@ Ext.define('CustomApp', {
 
             columnCfgs: [
                 {text: 'Metric', dataIndex: 'Metric'},
-                {text: 'Caption', dataIndex: 'Caption', flex: 1},
-                {text: 'Count', dataIndex: 'Count'}
+                {text: 'Count', dataIndex: 'Count'},
+                {text: 'Caption', dataIndex: 'Caption', flex: 1}
             ]
         });
 
