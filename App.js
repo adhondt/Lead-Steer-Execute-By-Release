@@ -29,22 +29,76 @@ Ext.define('CustomApp', {
 
         promises.push(me._getCount('PortfolioItem/Feature', 'Defined Business Features', me._filterByAttribute('State.Name','Defined'), PROJECT_BUSINESS, 40));
 
-        promises.push(me._getCount('TestCase', 'TF196 Failed Test Cases',me._filterVerdictByTestFolder('Fail','TF196'),PROJECT_RADIAN,245));
-        promises.push(me._getCount('TestCase', 'TF196 Passing Test Cases',me._filterVerdictByTestFolder('Pass','TF196'),PROJECT_RADIAN,245));
-        promises.push(me._getCount('TestCase', 'TF196 Other Test Cases',me._filterNoVerdictByTestFolder('TF196'),PROJECT_RADIAN,245));
-
-        Deft.Promise.all(promises).then({
+        me._count('TestCase', 'TestFolder.FormattedID','TF196',PROJECT_RADIAN).then({
             success: function(results) {
-                Ext.Array.each(results, function(result) {
-                    resultArray.push(result);
-                    console.log(result);
-                });
-                me._makeGrid(resultArray);
+                    var deferred = Ext.create('Deft.Deferred');
+                    Ext.Array.each(results, function(result) {
+                        deferred.resolve(result.Count);
+                    });
+                    return deferred;
+                }
+            }
+        ).then({
+                success: function(testFolderCases){
+                    promises.push(me._getCount('TestCase', 'TF196 Failed Test Cases',me._filterVerdictByTestFolder('Fail','TF196'),PROJECT_RADIAN,testFolderCases));
+                    promises.push(me._getCount('TestCase', 'TF196 Passing Test Cases',me._filterVerdictByTestFolder('Pass','TF196'),PROJECT_RADIAN,testFolderCases));
+                    promises.push(me._getCount('TestCase', 'TF196 Other Test Cases',me._filterNoVerdictByTestFolder('TF196'),PROJECT_RADIAN,testFolderCases));
+            
+                    Deft.Promise.all(promises).then({
+                        success: function(results) {
+                            Ext.Array.each(results, function(result) {
+                                resultArray.push(result);
+                            });
+                            me._makeGrid(resultArray);
+                        }
+                    });
+
+                }, failure: function(res) {me._addLine(me,"died ");}
+            }
+            );
+
+    },
+    
+    _pullCount: function(results){
+        Ext.Array.each(results, function(result) {
+            this._addLine(this, "Resolved " + result.Caption + " " + result.Count);
+            return result.Count;
+        });
+    },
+
+    _count: function(modelType, attribute, attrValue) {
+        var deferred = Ext.create('Deft.Deferred');
+
+        var artifactStore = Ext.create('Rally.data.wsapi.Store', {
+            model: modelType,
+            pagesize: 1,
+            autoLoad: true,
+            filters: [
+                {
+                    property: attribute,
+                    operator: '=',
+                    value: attrValue
+                }
+            ],
+            sorters: [
+                {
+                    property: 'FormattedID',
+                    direction: 'ASC'
+                }
+            ],
+            listeners: {
+                load: function(store, records) {
+                    var manualCount = store.getTotalCount();
+                    result = {
+                        "Caption": modelType,
+                        "Count": manualCount
+                    };
+                    deferred.resolve(result);                }
             }
         });
 
+        return deferred;
     },
-
     _getCount: function(modelType, caption, filter, project, baseline) {
         var deferred = Ext.create('Deft.Deferred');
 
