@@ -4,14 +4,14 @@ Ext.define('CustomApp', {
 
     onScopeChange: function(scope) {
         var me = this;
-        me._calcBaselines().then(
+        me._calcBaselines(me).then(
                 function(testFolderCases){
-                    return me._runMetrics(testFolderCases);
+                    return me._runMetrics(me, testFolderCases);
             }
         );
     },
     
-    _runMetrics: function(testFolderCases){
+    _runMetrics: function(me, testFolderCases){
         var PROJECT_RADIAN = '37192747640';
         var PROJECT_BUSINESS = '37637012809';
         var PROJECT_SPRINT_TEAMS = '37213611687';
@@ -22,7 +22,6 @@ Ext.define('CustomApp', {
         var PROJECT_PAS_TEAMS = '34799452294';
         var PROJECT_SFDC_TEAMS = '35625125755';
 
-        var me = this;
         var promises = [];
         var resultArray = [];
 
@@ -36,7 +35,7 @@ Ext.define('CustomApp', {
                 Ext.Array.each(results, function(result) {
                     resultArray.push(result);
                 });
-                me._makeGrid(resultArray);
+                me._makeGrid(me, resultArray);
             }
         });
     },
@@ -47,10 +46,8 @@ Ext.define('CustomApp', {
             html: value
         });
     },
-    _calcBaselines: function() {
+    _calcBaselines: function(me) {
         var PROJECT_RADIAN = '37192747640';
-
-        var me = this;
 
         return me._count('TestCase', 'TestFolder.FormattedID', 'TF196', PROJECT_RADIAN).then({
             success: function(results) {
@@ -193,9 +190,7 @@ Ext.define('CustomApp', {
         return filters;
     },
 
-    _makeGrid: function(results) {
-
-        var me = this;
+    _makeGrid: function(me, results) {
 
         if (me._summaryGrid) {
             me._summaryGrid.destroy();
