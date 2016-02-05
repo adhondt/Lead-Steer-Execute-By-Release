@@ -52,7 +52,7 @@ Ext.define('CustomApp', {
 
         var me = this;
 
-        return me._count('TestCase', 'TestFolder.FormattedID','TF196',PROJECT_RADIAN).then({
+        return me._count('TestCase', 'TestFolder.FormattedID', 'TF196', PROJECT_RADIAN).then({
             success: function(results) {
                     return me._pullCount(results);
                 }
@@ -68,7 +68,7 @@ Ext.define('CustomApp', {
         return deferred;
     },
 
-    _count: function(modelType, attribute, attrValue) {
+    _count: function(modelType, attribute, attrValue, project) {
         var deferred = Ext.create('Deft.Deferred');
 
         var artifactStore = Ext.create('Rally.data.wsapi.Store', {
@@ -82,6 +82,7 @@ Ext.define('CustomApp', {
                     value: attrValue
                 }
             ],
+            context: {project: '/project/' + project},
             sorters: [
                 {
                     property: 'FormattedID',
