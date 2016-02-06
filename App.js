@@ -6,8 +6,8 @@ Ext.define('CustomApp', {
         var me = this;
 
         me._calcBaselines(me).then(
-                function(testFolderCases){
-                    return me._runMetrics(me, me._defineMetrics(me, {testFolderCases: testFolderCases}));
+                function(baselines){
+                    return me._runMetrics(me, me._defineMetrics(me, baselines));
             }
         );
     },
@@ -40,7 +40,7 @@ Ext.define('CustomApp', {
 
         return me._getBaseline('TestCase', 'TestFolder.FormattedID', 'TF196', Radian.PROJECT_RADIAN).then({
             success: function(result) {
-                    return result;
+                    return {testFolderCases: result};
                 }
             }
         );
