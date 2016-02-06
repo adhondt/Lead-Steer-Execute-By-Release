@@ -7,33 +7,23 @@ Ext.define('CustomApp', {
 
         me._calcBaselines(me).then(
                 function(testFolderCases){
-                    return me._runMetrics(me, testFolderCases, me._defineMetrics(me, {testFolderCases: testFolderCases}));
+                    return me._runMetrics(me, me._defineMetrics(me, {testFolderCases: testFolderCases}));
             }
         );
     },
     
     _defineMetrics: function(me, baselines){
-        var PROJECT_RADIAN = '37192747640';
-        var PROJECT_BUSINESS = '37637012809';
-        var PROJECT_SPRINT_TEAMS = '37213611687';
-        var PROJECT_SUPPORTING_TEAMS = '37192947515';
-        var PROJECT_EXECUTION = '37192748545';
-        var PROJECT_AWS_TEAMS = '35625370074';
-        var PROJECT_ECMLDR_TEAMS = '35625373948';
-        var PROJECT_PAS_TEAMS = '34799452294';
-        var PROJECT_SFDC_TEAMS = '35625125755';
         var metrics = [];
-        
-        metrics.push(me._getCount('PortfolioItem/Feature', 'Defined Business Features', me._filterByAttribute('State.Name','Defined'), PROJECT_BUSINESS, 40));
-        metrics.push(me._getCount('TestCase', 'TF196 Failed Test Cases',me._filterVerdictByTestFolder('Fail','TF196'),PROJECT_RADIAN, baselines.testFolderCases));
-        metrics.push(me._getCount('TestCase', 'TF196 Passing Test Cases',me._filterVerdictByTestFolder('Pass','TF196'),PROJECT_RADIAN, baselines.testFolderCases));
-        metrics.push(me._getCount('TestCase', 'TF196 Other Test Cases',me._filterNoVerdictByTestFolder('TF196'),PROJECT_RADIAN, baselines.testFolderCases));
+
+        metrics.push(me._calcMetric('PortfolioItem/Feature', 40, 'Defined Business Features', me._filterByAttribute('State.Name','Defined'), Radian.PROJECT_BUSINESS));
+        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Failed Test Cases',me._filterVerdictByTestFolder('Fail','TF196'),Radian.PROJECT_RADIAN));
+        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Passing Test Cases',me._filterVerdictByTestFolder('Pass','TF196'),Radian.PROJECT_RADIAN));
+        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Other Test Cases',me._filterNoVerdictByTestFolder('TF196'),Radian.PROJECT_RADIAN));
         
         return metrics;        
     },
     
-    _runMetrics: function(me, testFolderCases, metrics){
-
+    _runMetrics: function(me, metrics){
         var resultArray = [];
 
         Deft.Promise.all(metrics).then({
@@ -46,16 +36,9 @@ Ext.define('CustomApp', {
         });
     },
 
-    _addLine: function(container, value) {
-        container.add({
-            xtype: 'component',
-            html: value
-        });
-    },
     _calcBaselines: function(me) {
-        var PROJECT_RADIAN = '37192747640';
 
-        return me._count('TestCase', 'TestFolder.FormattedID', 'TF196', PROJECT_RADIAN).then({
+        return me._getBaseline('TestCase', 'TestFolder.FormattedID', 'TF196', Radian.PROJECT_RADIAN).then({
             success: function(result) {
                     return result;
                 }
@@ -63,7 +46,7 @@ Ext.define('CustomApp', {
         );
     },
     
-    _count: function(modelType, attribute, attrValue, project) {
+    _getBaseline: function(modelType, attribute, attrValue, project) {
         var deferred = Ext.create('Deft.Deferred');
 
         var artifactStore = Ext.create('Rally.data.wsapi.Store', {
@@ -93,7 +76,7 @@ Ext.define('CustomApp', {
 
         return deferred;
     },
-    _getCount: function(modelType, caption, filter, project, baseline) {
+    _calcMetric: function(modelType, baseline, caption, filter, project) {
         var deferred = Ext.create('Deft.Deferred');
 
         var artifactStore = Ext.create('Rally.data.wsapi.Store', {
