@@ -15,10 +15,10 @@ Ext.define('CustomApp', {
     _defineMetrics: function(me, baselines){
         var metrics = [];
 
-        metrics.push(me._calcMetric('PortfolioItem/Feature', 40, 'Defined Business Features', me._filterByAttribute('State.Name','Defined'), Radian.PROJECT_BUSINESS));
-        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Failed Test Cases',me._filterVerdictByTestFolder('Fail','TF196'),Radian.PROJECT_RADIAN));
-        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Passing Test Cases',me._filterVerdictByTestFolder('Pass','TF196'),Radian.PROJECT_RADIAN));
-        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Other Test Cases',me._filterNoVerdictByTestFolder('TF196'),Radian.PROJECT_RADIAN));
+        metrics.push(me._calcMetric('PortfolioItem/Feature', 40, 'Defined Business Features', Filters.filterByAttribute('State.Name','Defined', me.getContext().getTimeboxScope()), Radian.PROJECT_BUSINESS));
+        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Failed Test Cases',Filters.filterVerdictByTestFolder('Fail','TF196'),Radian.PROJECT_RADIAN));
+        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Passing Test Cases',Filters.filterVerdictByTestFolder('Pass','TF196'),Radian.PROJECT_RADIAN));
+        metrics.push(me._calcMetric('TestCase', baselines.testFolderCases, 'TF196 Other Test Cases',Filters.filterNoVerdictByTestFolder('TF196'),Radian.PROJECT_RADIAN));
         
         return metrics;        
     },
@@ -105,66 +105,6 @@ Ext.define('CustomApp', {
         });
 
         return deferred;
-    },
-
-	_filterByAttribute: function(attribute, attrValue) {
-        var filters = Ext.create('Rally.data.QueryFilter', {
-            property: attribute,
-            operator: '=',
-            value: attrValue
-            });
-		var timeboxScope = this.getContext().getTimeboxScope();
-		if(timeboxScope) {            
-			filters = filters.and(timeboxScope.getQueryFilter());
-		}
-		return filters;		
-	},
-	
-	_filterVerdictByTestFolder: function(attrValue, folder) {
-        var filters = Ext.create('Rally.data.QueryFilter', {
-            property: 'LastVerdict',
-            operator: '=',
-            value: attrValue
-            });
-		filters = filters.and(Ext.create('Rally.data.QueryFilter', {
-            property: 'TestFolder.FormattedID',
-            operator: '=',
-            value: folder
-            }));
-		return filters;		
-	},
-	
-	_filterNoVerdictByTestFolder: function(folder) {
-        var filters = Ext.create('Rally.data.QueryFilter', {
-            property: 'LastVerdict',
-            operator: '!=',
-            value: 'Pass'
-            });
-		filters = filters.and(Ext.create('Rally.data.QueryFilter', {
-            property: 'LastVerdict',
-            operator: '!=',
-            value: 'Fail'
-            }));
-		filters = filters.and(Ext.create('Rally.data.QueryFilter', {
-            property: 'TestFolder.FormattedID',
-            operator: '=',
-            value: folder
-            }));
-		return filters;		
-	},
-	
-    _filterEstimatedStoriesByRelease: function(value) {
-        var filters = Ext.create('Rally.data.QueryFilter', {
-            property: 'Release.Name',
-            operator: '=',
-            value: value
-            });
-        filters = filters.and(Ext.create('Rally.data.QueryFilter', {
-            property: 'PlanEstimate',
-            operator: '>',
-            value: '0'
-            }));
-        return filters;
     },
 
     _makeGrid: function(me, results) {
